@@ -7,8 +7,6 @@ import lombok.*;
 @Data
 public class PurchaseRequest {
 
-    private Integer boughtById;
-
     private Integer productId;
 
     private Integer quantity;

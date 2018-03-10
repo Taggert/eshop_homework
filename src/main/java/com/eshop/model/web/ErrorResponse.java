@@ -1,19 +1,19 @@
 package com.eshop.model.web;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-import java.util.List;
-import java.util.Map;
+import java.util.Date;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
+@Builder
 public class ErrorResponse {
 
-    private Map<String, List<String>> errors;
-
-
+    private Object errorMessage;
+    private Date occurredOn;
+    private String hostName;
+    private String status;
 
 }

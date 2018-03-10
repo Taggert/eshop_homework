@@ -9,15 +9,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @Builder
-public class ProductRequest {
+public class ProductUpdateRequest {
 
     private String displayName;
 
     private String description;
-
-    private Integer categoryId;
-
-    private String categoryName;
 
     private Double price;
 

@@ -1,34 +1,23 @@
 package com.eshop.model.exceptions;
 
-import com.eshop.model.web.ErrorResponse;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import org.springframework.http.HttpStatus;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+public class NoSuchUserException extends GeneralAPIException {
 
-@AllArgsConstructor
-@NoArgsConstructor
-public class NoSuchUserException extends AbstractAPIException {
+    public NoSuchUserException() {
+    }
 
-    private String error;
-
-    @Override
-    public ErrorResponse getErrorResponse(){
-        Map<String, List<String>> errors = new HashMap<>();
-        errors.put("Error", new ArrayList<>());
-        errors.get("Error").add(error);
-        ErrorResponse errorResponse = new ErrorResponse();
-        errorResponse.setErrors(errors);
-        return errorResponse;
+    public NoSuchUserException(String message) {
+        super(message);
     }
 
     @Override
-    public String getMessage() {
-        return error;
+    public HttpStatus getHttpStatus() {
+        return HttpStatus.NOT_FOUND;
     }
 
-
+    @Override
+    public Object getErrors() {
+        return super.getErrors();
+    }
 }

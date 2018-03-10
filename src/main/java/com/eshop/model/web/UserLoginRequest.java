@@ -12,27 +12,12 @@ import javax.validation.constraints.NotBlank;
 @NoArgsConstructor
 @Data
 @Builder
-public class UserRequest {
-
+public class UserLoginRequest {
     @NotBlank
     @Length(max = 50)
     private String username;
-
     @NotBlank
     @Length(max = 50)
     private String password;
-
-    @NotBlank
-    private String email;
-
-    @NotBlank
-    @Length(max = 50)
-    private String firstname;
-
-    @NotBlank
-    @Length(max = 50)
-    private String lastname;
-
-
 
 }

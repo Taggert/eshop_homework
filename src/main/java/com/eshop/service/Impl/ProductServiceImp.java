@@ -2,12 +2,23 @@ package com.eshop.service.Impl;
 
 import com.eshop.model.Category;
 import com.eshop.model.Product;
+import com.eshop.model.Role;
+import com.eshop.model.User;
+import com.eshop.model.exceptions.GeneralAPIException;
+import com.eshop.model.exceptions.NoSuchProductException;
+import com.eshop.model.exceptions.NoSuchUserException;
+import com.eshop.model.exceptions.NotYourProductException;
 import com.eshop.model.web.ProductRequest;
+import com.eshop.model.web.ProductResponse;
+import com.eshop.model.web.ProductUpdateRequest;
 import com.eshop.repository.CategoryRepository;
 import com.eshop.repository.ProductRepository;
 import com.eshop.repository.UserRepository;
+import com.eshop.repository.UserSessionRepository;
 import com.eshop.service.ProductService;
+import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
+@NoArgsConstructor
 public class ProductServiceImp implements ProductService {
 
     @Autowired
@@ -29,24 +41,44 @@ public class ProductServiceImp implements ProductService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private UserSessionRepository userSessionRepository;
+
     @Override
     @Transactional
-    public Product create(ProductRequest productWeb) {
+    public Product create(ProductRequest productWeb, String sessioId) {
         Product product = new Product();
         product = product.builder()
-                .displayName(productWeb.getDisplayName())
+                .displayedName(productWeb.getDisplayName())
                 .description(productWeb.getDescription())
                 .category(!categoryRepository.existsById(productWeb.getCategoryId()) ?
                         productService.createCategory(productWeb.getCategoryName()) : categoryRepository.findById(productWeb.getCategoryId()).get())
                 .price(productWeb.getPrice())
                 .discount(productWeb.getDiscount() == null ? 0 : productWeb.getDiscount())
-                .seller(    userRepository.findById(productWeb.getUserId()).get())
+                .seller(userSessionRepository.findBySessionId(sessioId).getUser())
                 .quantity(productWeb.getQuantity())
                 .build();
         productRepository.save(product);
         return product;
     }
 
+
+    @Override
+    @Transactional
+    public Product update(ProductUpdateRequest productUpdateRequest, Integer productId, String sessionId) {
+        Product product = productRepository.findById(productId).orElseThrow(() -> new NoSuchProductException("Product with ID [" + productId + "] not found"));
+        User seller = product.getSeller();
+        User you = userSessionRepository.findBySessionId(sessionId).getUser();
+        if (seller.equals(you) || you.getRoles().contains(Role.ADMIN)) {
+            product.setDisplayedName(productUpdateRequest.getDisplayName());
+            product.setDescription(productUpdateRequest.getDescription());
+            product.setPrice(productUpdateRequest.getPrice());
+            product.setDiscount(productUpdateRequest.getDiscount());
+            product.setQuantity(productUpdateRequest.getQuantity());
+            return productRepository.save(product);
+        }
+        throw new NotYourProductException("You are able to update only your products");
+    }
 
     @Override
     @Transactional
@@ -63,13 +95,17 @@ public class ProductServiceImp implements ProductService {
     @Override
     @Transactional
     public List<Product> findByName(String name) {
-        return productRepository.findByDisplayName(name);
+        return productRepository.findByDisplayedName(name);
     }
 
     @Override
     @Transactional
-    public List<Product> findBySellerId(Integer sellerId) {
-        return productRepository.findBySellerId(sellerId);
+    public List<Product> findBySeller(String username) {
+        User seller = userRepository.getByUsername(username);
+        if (seller == null) {
+            throw new NoSuchUserException("User with username " + username + "doesn't exists");
+        }
+        return productRepository.getBySeller(seller);
     }
 
     @Override
@@ -83,7 +119,8 @@ public class ProductServiceImp implements ProductService {
     @Transactional
     public List<Product> findByCategory(Integer categoryId) {
         if (categoryRepository.findById(categoryId) != null) {
-            return productRepository.findByCategory(categoryRepository.getOne(categoryId));
+            return productRepository.findByCategory(categoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new GeneralAPIException("No such category")));
         }
         return null;
     }
@@ -103,4 +140,41 @@ public class ProductServiceImp implements ProductService {
         categoryRepository.save(category);
         return category;
     }
+
+    @Override
+    @Transactional
+    public List<Product> findByParamsy(String productName, Integer categoryId, Boolean isDesc) {
+
+        Sort.Order productNameSort = Sort.Order
+                .by("displayedName")
+                .with(isDesc ? Sort.Direction.DESC : Sort.Direction.ASC);
+
+        Sort sort = Sort.by(productNameSort);
+
+        if (productName == null && categoryId == null) {
+            return productRepository.findAll(sort);
+        }
+        if (productName == null) {
+            return productRepository.findByCategory(
+                    categoryRepository.findById(categoryId)
+                            .orElseThrow(() -> new GeneralAPIException("No such category")),
+                    sort);
+        }
+        if(categoryId ==null){
+            List<Product> byDisplayedName = productRepository.findByDisplayedName(productName);
+            if(byDisplayedName.isEmpty()){
+                throw new GeneralAPIException("Product with name "+productName+" doesn't exists");
+            }
+            return byDisplayedName;
+        }
+        List<Product> res = productRepository.findByDisplayedNameAndCategory(productName,
+                categoryRepository.findById(categoryId)
+                        .orElseThrow(() -> new GeneralAPIException("No such category")),
+                sort);
+        if(res.isEmpty()){
+            throw new GeneralAPIException("Product with name "+productName+" doesn't exists");
+        }
+        return res;
+    }
+
 }

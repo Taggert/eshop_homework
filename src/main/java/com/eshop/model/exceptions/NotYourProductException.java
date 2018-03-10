@@ -3,23 +3,24 @@ package com.eshop.model.exceptions;
 import org.springframework.http.HttpStatus;
 
 
-public class NotEnoughProductsException extends GeneralAPIException {
+public class NotYourProductException extends GeneralAPIException {
 
-    public NotEnoughProductsException() {
+    public NotYourProductException() {
     }
 
-    public NotEnoughProductsException(String message) {
+    public NotYourProductException(String message) {
         super(message);
     }
 
     @Override
     public HttpStatus getHttpStatus() {
-        return HttpStatus.NOT_FOUND;
+        return HttpStatus.NOT_ACCEPTABLE;
     }
 
     @Override
     public Object getErrors() {
         return super.getErrors();
     }
+
 
 }

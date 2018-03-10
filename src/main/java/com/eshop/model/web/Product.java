@@ -1,11 +1,11 @@
-package com.eshop.model;
+package com.eshop.model.web;
 
+import com.eshop.model.Category;
+import com.eshop.model.User;
 import lombok.*;
 
 import javax.persistence.*;
 
-@Entity
-@Table(name = "PRODUCTS")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
