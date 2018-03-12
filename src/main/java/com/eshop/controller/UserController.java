@@ -5,6 +5,8 @@ import com.eshop.model.User;
 import com.eshop.model.exceptions.InputValidationException;
 import com.eshop.model.web.UserLoginRequest;
 import com.eshop.model.web.UserRequest;
+import com.eshop.model.web.UserResponce;
+import com.eshop.model.web.UserResponceWithoutId;
 import com.eshop.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindingResult;
@@ -46,17 +48,17 @@ public class UserController {
     }
 
     @PutMapping("/balance")
-    public User balance(@RequestBody Double balance, @RequestHeader("Authorization") String sessionId ){
+    public UserResponce balance(@RequestBody Double balance, @RequestHeader("Authorization") String sessionId ){
        return userService.updateBalance(balance, sessionId);
     }
 
     @GetMapping("/all")
-    public List<User> getAll(){
+    public List<UserResponce> getAll(){
         return userService.getAll();
     }
 
     @GetMapping("/search/{username}")
-    public User searchByUsername(@PathVariable("username") String username){
+    public UserResponceWithoutId searchByUsername(@PathVariable("username") String username){
         return userService.findByUsername(username);
     }
 
@@ -66,12 +68,12 @@ public class UserController {
     }
 
     @GetMapping("/promote/{username}")
-    public User promoteUser(@PathVariable("username") String username){
+    public UserResponce promoteUser(@PathVariable("username") String username){
         return userService.promoteUser(username);
     }
 
     @GetMapping("/demote/{username}")
-    public User demoteUser(@PathVariable("username") String username){
+    public UserResponce demoteUser(@PathVariable("username") String username){
         return userService.demoteUser(username);
     }
 

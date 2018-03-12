@@ -1,5 +1,7 @@
 package com.eshop.model;
 
+import com.eshop.model.web.UserResponce;
+import com.eshop.model.web.UserResponceWithoutId;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -41,5 +43,32 @@ public class User {
 
     @ElementCollection(fetch = FetchType.EAGER)
     private List<Role> roles;
+
+    /*@JsonIgnore
+
+    private UserResponce response = createResponse();
+
+    @JsonIgnore
+    private UserResponceWithoutId responseWithoutId = createResponseWithoutId();*/
+
+    public UserResponce createResponse() {
+        return UserResponce.builder()
+                .id(id)
+                .username(username)
+                .email(email)
+                .firstname(firstname)
+                .lastname(lastname)
+                .build();
+    }
+
+    public UserResponceWithoutId createResponseWithoutId() {
+
+        return UserResponceWithoutId.builder()
+                .username(username)
+                .email(email)
+                .firstname(firstname)
+                .lastname(lastname)
+                .build();
+    }
 
 }

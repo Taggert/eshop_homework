@@ -1,5 +1,6 @@
 package com.eshop.model;
 
+import com.eshop.model.web.ProductResponse;
 import lombok.*;
 
 import javax.persistence.*;
@@ -40,6 +41,19 @@ public class Product {
     @Column(name = "QUANTITY", nullable = false)
     private Integer quantity;
 
+    /*@JsonIgnore
+    private UserResponceWithoutId sellerResponse = seller.createResponseWithoutId();*/
 
+    public  ProductResponse createResponse(){
 
+        return ProductResponse.builder()
+                .id(id)
+                .displayedName(displayedName)
+                .description(description)
+                .category(category)
+                .quantity(quantity)
+                .price(price)
+                .discount(discount)
+                .build();
+    }
 }

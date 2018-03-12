@@ -6,6 +6,8 @@ import com.eshop.model.UserSession;
 import com.eshop.model.exceptions.NoSuchUserException;
 import com.eshop.model.web.UserLoginRequest;
 import com.eshop.model.web.UserRequest;
+import com.eshop.model.web.UserResponce;
+import com.eshop.model.web.UserResponceWithoutId;
 import com.eshop.repository.UserRepository;
 import com.eshop.repository.UserSessionRepository;
 import com.eshop.service.UserService;
@@ -82,7 +84,7 @@ public class UserServiceImpl implements UserService {
             userRepository.save(tempUser);
             return tempUser;
         }
-        throw new NoSuchUserException("Only user "+userWeb.getUsername()+" can update himself");
+        throw new NoSuchUserException("Only user " + userWeb.getUsername() + " can update himself");
     }
 
     @Override
@@ -98,20 +100,24 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public List<User> getAll() {
-        return userRepository.findAll();
+    public List<UserResponce> getAll() {
+        return userRepository.findAllOrderByUsername();
     }
 
     @Override
     @Transactional
-    public User findByUsername(String username) {
+    public UserResponceWithoutId findByUsername(String username) {
         return userRepository.findByUsername(username);
     }
 
     @Override
     @Transactional
     public void deleteUserByUsername(String username) {
-        userRepository.delete(userRepository.findByUsername(username));
+        if (userRepository.getByUsername(username) != null) {
+            userRepository.delete(userRepository.getByUsername(username));
+        }else{
+            throw new NoSuchUserException("User with username " +username+" doesn't exist");
+        }
     }
 
     @Override
@@ -134,7 +140,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public User promoteUser(String username) {
+    public UserResponce promoteUser(String username) {
         User user = userRepository.getByUsername(username);
         if (user == null) {
             throw new RuntimeException(String.format("User with username: %s, not found", username));
@@ -145,12 +151,13 @@ public class UserServiceImpl implements UserService {
         }
         rolesTemp.add(Role.getById(rolesTemp.get(rolesTemp.size() - 1).getId() + 1));
         user.setRoles(rolesTemp);
-        return user;
+        userRepository.save(user);
+        return userRepository.findById(user.getId());
     }
 
     @Override
     @Transactional
-    public User demoteUser(String username) {
+    public UserResponce demoteUser(String username) {
         User user = userRepository.getByUsername(username);
         if (user == null) {
             throw new RuntimeException(String.format("User with username: %s, not found", username));
@@ -161,16 +168,18 @@ public class UserServiceImpl implements UserService {
         }
         rolesTemp.remove(rolesTemp.get(rolesTemp.size() - 1));
         user.setRoles(rolesTemp);
-        return user;
+        userRepository.save(user);
+        return userRepository.findById(user.getId());
     }
 
     @Override
     @Transactional
-    public User updateBalance(Double balance, String sessionId) {
+    public UserResponce updateBalance(Double balance, String sessionId) {
         User user = userSessionRepository.getBySessionId(sessionId).getUser();
         Double balanceOld = user.getBalance();
         user.setBalance(balance + balanceOld);
         userRepository.save(user);
-        return user;
+        return userRepository.findById(sessionId
+        );
     }
 }

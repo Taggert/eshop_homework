@@ -1,7 +1,7 @@
 package com.eshop.controller;
 
-import com.eshop.model.Product;
 import com.eshop.model.Purchase;
+import com.eshop.model.web.PurchaseResponce;
 import com.eshop.service.PurchaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -22,20 +22,14 @@ public class PurchaseController {
     }*/
 
     @PostMapping("/buy")
-    public Purchase buy(@RequestParam("productId") Integer productId,
+    public PurchaseResponce buy(@RequestParam("productId") Integer productId,
                         @RequestParam("quantity") Integer quantity,
                         @RequestHeader("Authorization") String sessionId){
         return purchaseService.buy(productId, quantity, sessionId);
     }
 
-        @GetMapping("/getsells")
-    public List<Product> getSells(@RequestHeader("Authorization") String sessionId,
-                                  @RequestParam(value = "username", required = false) String username ){
-        return purchaseService.getSells(sessionId, username);
-    }
-
     @GetMapping("/getbuys")
-    public List<Purchase> getBuys(@RequestHeader("Authorization") String sessionId,
+    public List<PurchaseResponce> getBuys(@RequestHeader("Authorization") String sessionId,
                                   @RequestParam(value = "username", required = false) String username){
         return purchaseService.getBuys(sessionId, username);
     }

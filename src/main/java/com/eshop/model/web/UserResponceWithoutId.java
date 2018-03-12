@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @Builder
-public class UserResponce {
-    private String id;
+public class UserResponceWithoutId {
 
     private String username;
 
@@ -19,5 +18,6 @@ public class UserResponce {
     private String firstname;
 
     private String lastname;
+
 
 }

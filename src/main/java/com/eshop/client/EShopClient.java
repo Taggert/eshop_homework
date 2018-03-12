@@ -28,8 +28,8 @@ public class EShopClient {
         List<User> users = createUsers();
         List<Product> products = createProducts(users);
         makePurchases(users, products);
-       /* updateProduct(users, products);
-        makePurchases(users, products);*/
+        updateProduct(users, products);
+        makePurchases(users, products);
 
 
     }

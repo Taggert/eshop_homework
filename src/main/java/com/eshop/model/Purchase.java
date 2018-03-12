@@ -45,6 +45,12 @@ public class Purchase {
     @Column(name = "START_PRICE", nullable = false)
     private Double priceWithoutDiscount;
 
+    /*@JsonIgnore
+    private UserResponceWithoutId boughtByResponse = boughtBy.createResponseWithoutId();
+
+    @JsonIgnore
+    private ProductResponse productResponse = product.createResponse();*/
+
 
 
 

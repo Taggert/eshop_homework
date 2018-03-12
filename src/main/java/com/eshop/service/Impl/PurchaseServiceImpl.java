@@ -5,7 +5,7 @@ import com.eshop.model.Purchase;
 import com.eshop.model.Role;
 import com.eshop.model.User;
 import com.eshop.model.exceptions.*;
-import com.eshop.model.web.PurchaseRequest;
+import com.eshop.model.web.PurchaseResponce;
 import com.eshop.repository.ProductRepository;
 import com.eshop.repository.PurchaseRepository;
 import com.eshop.repository.UserRepository;
@@ -34,7 +34,7 @@ public class PurchaseServiceImpl implements PurchaseService {
     @Autowired
     private UserSessionRepository userSessionRepository;
 
-    @Override
+    /*@Override
     @Transactional(rollbackFor = GeneralAPIException.class)
     public Purchase save(PurchaseRequest purchaseWeb, String sessionId) throws GeneralAPIException {
         Purchase purchase = new Purchase();
@@ -69,11 +69,11 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         purchaseRepository.save(purchase);
         return purchase;
-    }
+    }*/
 
     @Override
     @Transactional(rollbackFor = GeneralAPIException.class)
-    public Purchase buy(Integer productId, Integer quantity, String sessionId) throws GeneralAPIException {
+    public PurchaseResponce buy(Integer productId, Integer quantity, String sessionId) throws GeneralAPIException {
         Purchase purchase = new Purchase();
         Product product;
         User buyer = userSessionRepository.findBySessionId(sessionId).getUser();
@@ -103,49 +103,27 @@ public class PurchaseServiceImpl implements PurchaseService {
         } else {
             throw new InsufficiendFundsException("Not enough money");
         }
-
         purchaseRepository.save(purchase);
-        return purchase;
+        Integer purchaseId = purchase.getId();
+        return purchaseRepository.findByIdOrderById(purchaseId);
     }
 
     @Override
     @Transactional
-    public List<Product> getSells(String sessionId, String username) {
+    public List<PurchaseResponce> getBuys(String sessionId, String username) {
         User user = userSessionRepository.getBySessionId(sessionId).getUser();
         if (username != null && user.getRoles().contains(Role.ADMIN)) {
             User byUsername = userRepository.getByUsername(username);
             if (byUsername == null) {
                 throw new NoSuchUserException("User with username " + username + "doesn't exists");
             }
-            List<Product> bySeller = productRepository.getBySeller(byUsername);
-            if (bySeller == null) {
-                throw new NotEnoughProductsException("No products");
-            }
-            return bySeller;
-        }
-        List<Product> bySeller = productRepository.getBySeller(user);
-        if (bySeller == null) {
-            throw new NotEnoughProductsException("No products");
-        }
-        return bySeller;
-    }
-
-    @Override
-    @Transactional
-    public List<Purchase> getBuys(String sessionId, String username) {
-        User user = userSessionRepository.getBySessionId(sessionId).getUser();
-        if (username != null && user.getRoles().contains(Role.ADMIN)) {
-            User byUsername = userRepository.getByUsername(username);
-            if (byUsername == null) {
-                throw new NoSuchUserException("User with username " + username + "doesn't exists");
-            }
-            List<Purchase> byBoughtBy = purchaseRepository.getByBoughtBy(byUsername);
+            List<PurchaseResponce> byBoughtBy = purchaseRepository.getByBoughtBy(byUsername);
             if (byBoughtBy == null) {
                 throw new NoSuchProductException("No purchases");
             }
             return byBoughtBy;
         }
-        List<Purchase> byBoughtBy = purchaseRepository.getByBoughtBy(user);
+        List<PurchaseResponce> byBoughtBy = purchaseRepository.getByBoughtBy(user);
         if (byBoughtBy == null) {
             throw new NoSuchProductException("No purchases");
         }

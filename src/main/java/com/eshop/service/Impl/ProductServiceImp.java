@@ -4,10 +4,7 @@ import com.eshop.model.Category;
 import com.eshop.model.Product;
 import com.eshop.model.Role;
 import com.eshop.model.User;
-import com.eshop.model.exceptions.GeneralAPIException;
-import com.eshop.model.exceptions.NoSuchProductException;
-import com.eshop.model.exceptions.NoSuchUserException;
-import com.eshop.model.exceptions.NotYourProductException;
+import com.eshop.model.exceptions.*;
 import com.eshop.model.web.ProductRequest;
 import com.eshop.model.web.ProductResponse;
 import com.eshop.model.web.ProductUpdateRequest;
@@ -58,32 +55,54 @@ public class ProductServiceImp implements ProductService {
                 .seller(userSessionRepository.findBySessionId(sessioId).getUser())
                 .quantity(productWeb.getQuantity())
                 .build();
-        productRepository.save(product);
-        return product;
-    }
+        return productRepository.save(product);
 
+    }
 
     @Override
     @Transactional
-    public Product update(ProductUpdateRequest productUpdateRequest, Integer productId, String sessionId) {
+    public List<ProductResponse> getSells(String sessionId, String username) {
+        User user = userSessionRepository.getBySessionId(sessionId).getUser();
+        if (username != null && user.getRoles().contains(Role.ADMIN)) {
+            User byUsername = userRepository.getByUsername(username);
+            if (byUsername == null) {
+                throw new NoSuchUserException("User with username " + username + "doesn't exists");
+            }
+            List<ProductResponse> bySeller = productRepository.getBySeller(byUsername);
+            if (bySeller == null) {
+                throw new NotEnoughProductsException("No products");
+            }
+            return bySeller;
+        }
+        List<ProductResponse> bySeller = productRepository.getBySeller(user);
+        if (bySeller == null) {
+            throw new NotEnoughProductsException("No products");
+        }
+        return bySeller;
+    }
+
+    @Override
+    @Transactional
+    public ProductResponse update(ProductUpdateRequest productUpdateRequest, Integer productId, String sessionId) {
         Product product = productRepository.findById(productId).orElseThrow(() -> new NoSuchProductException("Product with ID [" + productId + "] not found"));
         User seller = product.getSeller();
         User you = userSessionRepository.findBySessionId(sessionId).getUser();
         if (seller.equals(you) || you.getRoles().contains(Role.ADMIN)) {
-            product.setDisplayedName(productUpdateRequest.getDisplayName());
-            product.setDescription(productUpdateRequest.getDescription());
-            product.setPrice(productUpdateRequest.getPrice());
-            product.setDiscount(productUpdateRequest.getDiscount());
-            product.setQuantity(productUpdateRequest.getQuantity());
-            return productRepository.save(product);
+            product.setDisplayedName(productUpdateRequest.getDisplayName() == null ? product.getDisplayedName() : productUpdateRequest.getDisplayName());
+            product.setDescription(productUpdateRequest.getDescription() == null ? product.getDescription() : productUpdateRequest.getDescription());
+            product.setPrice(productUpdateRequest.getPrice() == null ? product.getPrice() : productUpdateRequest.getPrice());
+            product.setDiscount(productUpdateRequest.getDiscount() == null ? product.getDiscount() : productUpdateRequest.getDiscount());
+            product.setQuantity(productUpdateRequest.getQuantity() == null ? product.getQuantity() : productUpdateRequest.getQuantity());
+            productRepository.save(product);
+            return productRepository.findByIdAndDisplayedName(product.getId(), product.getDisplayedName());
         }
         throw new NotYourProductException("You are able to update only your products");
     }
 
     @Override
     @Transactional
-    public List<Product> findAll() {
-        return productRepository.findAll();
+    public List<ProductResponse> findAll() {
+        return productRepository.findAllOrderById();
     }
 
     @Override
@@ -94,13 +113,13 @@ public class ProductServiceImp implements ProductService {
 
     @Override
     @Transactional
-    public List<Product> findByName(String name) {
+    public List<ProductResponse> findByName(String name) {
         return productRepository.findByDisplayedName(name);
     }
 
     @Override
     @Transactional
-    public List<Product> findBySeller(String username) {
+    public List<ProductResponse> findBySeller(String username) {
         User seller = userRepository.getByUsername(username);
         if (seller == null) {
             throw new NoSuchUserException("User with username " + username + "doesn't exists");
@@ -110,14 +129,14 @@ public class ProductServiceImp implements ProductService {
 
     @Override
     @Transactional
-    public List<Product> findByPrice(Double minPrice, Double maxPrice) {
+    public List<ProductResponse> findByPrice(Double minPrice, Double maxPrice) {
         minPrice = minPrice == null ? 0 : minPrice;
         return productRepository.findByPriceBetween(minPrice, maxPrice);
     }
 
     @Override
     @Transactional
-    public List<Product> findByCategory(Integer categoryId) {
+    public List<ProductResponse> findByCategory(Integer categoryId) {
         if (categoryRepository.findById(categoryId) != null) {
             return productRepository.findByCategory(categoryRepository.findById(categoryId)
                     .orElseThrow(() -> new GeneralAPIException("No such category")));
@@ -143,7 +162,7 @@ public class ProductServiceImp implements ProductService {
 
     @Override
     @Transactional
-    public List<Product> findByParamsy(String productName, Integer categoryId, Boolean isDesc) {
+    public List<ProductResponse> findByParamsy(String productName, Integer categoryId, Boolean isDesc) {
 
         Sort.Order productNameSort = Sort.Order
                 .by("displayedName")
@@ -152,7 +171,7 @@ public class ProductServiceImp implements ProductService {
         Sort sort = Sort.by(productNameSort);
 
         if (productName == null && categoryId == null) {
-            return productRepository.findAll(sort);
+            return productRepository.findAllOrderById(sort);
         }
         if (productName == null) {
             return productRepository.findByCategory(
@@ -160,19 +179,19 @@ public class ProductServiceImp implements ProductService {
                             .orElseThrow(() -> new GeneralAPIException("No such category")),
                     sort);
         }
-        if(categoryId ==null){
-            List<Product> byDisplayedName = productRepository.findByDisplayedName(productName);
-            if(byDisplayedName.isEmpty()){
-                throw new GeneralAPIException("Product with name "+productName+" doesn't exists");
+        if (categoryId == null) {
+            List<ProductResponse> byDisplayedName = productRepository.findByDisplayedName(productName);
+            if (byDisplayedName.isEmpty()) {
+                throw new GeneralAPIException("Product with name " + productName + " doesn't exists");
             }
             return byDisplayedName;
         }
-        List<Product> res = productRepository.findByDisplayedNameAndCategory(productName,
+        List<ProductResponse> res = productRepository.findByDisplayedNameAndCategory(productName,
                 categoryRepository.findById(categoryId)
                         .orElseThrow(() -> new GeneralAPIException("No such category")),
                 sort);
-        if(res.isEmpty()){
-            throw new GeneralAPIException("Product with name "+productName+" doesn't exists");
+        if (res.isEmpty()) {
+            throw new GeneralAPIException("Product with name " + productName + " doesn't exists");
         }
         return res;
     }

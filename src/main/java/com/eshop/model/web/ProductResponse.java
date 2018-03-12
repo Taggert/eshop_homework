@@ -23,8 +23,6 @@ public class ProductResponse {
 
     private Integer discount;
 
-    private UserResponce seller;
-
     private Integer quantity;
 
 

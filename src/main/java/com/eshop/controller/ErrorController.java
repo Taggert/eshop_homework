@@ -5,6 +5,7 @@ import com.eshop.model.web.ErrorResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -39,8 +40,18 @@ public class ErrorController {
                 .occurredOn(new Date())
                 .hostName(host)
                 .build();
-
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> getAuthErrors(AuthenticationException e) {
+        ErrorResponse errorResponse = ErrorResponse
+                .builder()
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
+                .errorMessage(e.getMessage())
+                .occurredOn(new Date())
+                .hostName(host)
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }
